@@ -279,7 +279,36 @@ Dokumen ini memecah `PRD.md` jadi unit kerja yang bisa dieksekusi AI agent satu 
 
 ---
 
-## Sprint 9 — Polish, Security Hardening, Deploy
+## Sprint 9 — UI/UX Upgrade Web Publik & Login
+
+**Tujuan**: web publik (beranda, direktori/detail ORMAWA, berita, kalender, galeri, arsip, kontak, aspirasi) + halaman login tampil menarik, user-friendly, mobile responsive, dan tidak "AI slop" (bukan template gradient-generik), tetap aksesibel (WCAG AA).
+
+**Referensi**: `PRD.md` §6.1, skill `ui-ux-pro-max` (design system: Soft UI Evolution, navy `#0F172A`/`#1E3A5F` + emas `#D97706`, serif akademik EB Garamond, shadow lembut, WCAG AA+)
+
+**Task:**
+- [x] Design tokens: self-host EB Garamond (`@fontsource-variable/eb-garamond` — bukan Google Fonts runtime, fetch gagal di env build), `--font-heading`, token `brand-soft`/`accent-ink`/`accent-strong` per theme (light/dark), `prefers-reduced-motion` global
+- [x] Dark mode publik: `next-themes` (sudah terpasang) + toggle Sun/Moon di header, hanya dipasang di layout publik — dashboard tidak disentuh
+- [x] Header publik: wordmark + ikon, active nav state, CTA Masuk, drawer mobile (Dialog Radix, slide-in, aksesibel, target ≥44px)
+- [x] Footer: grid 4 kolom (brand, navigasi, layanan, kontak) + bottom bar
+- [x] Beranda: hero editorial (eyebrow → headline serif besar → CTA), statistik strip (bukan kartu shadow seragam), berita asimetris (featured + 2), program unggulan list border, panel CTA aspirasi
+- [x] Direktori ORMAWA: filter panel + kartu monogram inisial (logo sering kosong), hover elevation
+- [x] Detail ORMAWA: hero profile (banner + avatar + badge), visi/misi editorial, divisi grid, pengurus avatar inisial, program list, galeri
+- [x] Berita list (featured + grid) & detail (max-w-prose, meta bar, judul serif)
+- [x] Kalender: grouping per bulan (bukan grid kartu); Galeri: grid + lightbox Dialog; Arsip: baris border-b (bukan Table yang jelek di mobile)
+- [x] Kontak: 2 kolom info + panel CTA; Aspirasi: form panel konsisten — **logika honeypot/rate-limit tidak disentuh**
+- [x] Login: split layout (panel brand navy kiri + form kanan), `loginAction` tidak diubah
+
+**Definition of Done**: sesuai `AGENTS.md` §6 — tsc/lint/build bersih, smoke test semua rute publik 200, Lighthouse SEO 100 / BP 100 / A11y 96.
+
+**Catatan Sprint 9 (dari eksekusi):**
+- **Kontras (ditemukan via review manual, bukan Lighthouse)**: `text-accent-ink` (`#92400e`) di atas navy dan `text-slate-500` di footer navy gagal 4.5:1 → diganti `text-amber-400` / `text-slate-400` di area gelap. Aksesibilitas jangan hanya andalkan Lighthouse (audit contrast hanya untuk elemen dalam viewport).
+- **Bug build**: konstanta `PUBLIK_NAV` diekspor dari file `"use client"` → gagal dipakai server component (`PUBLIK_NAV.map is not a function` saat prerender) → dipindah ke `src/lib/publik-nav.ts`.
+- **Verifikasi visual**: screenshot Brave headless (desktop/mobile/light) + analisis pixel region; dark mode di Brave headless tidak bisa di-render (flag `--force-dark-mode`/`--force-prefers-color-scheme` tidak mengubah `prefers-color-scheme` di versi ini) — dark mode diverifikasi via DOM (class `light`/`dark` di-set next-themes + dark: variants ter-render), token `.dark` terdefinisi.
+- File baru: `src/components/theme-provider.tsx`, `src/components/publik/site-header.tsx`, `src/components/publik/galeri-grid.tsx`, `src/lib/publik-nav.ts`. Dependency baru: `@fontsource-variable/eb-garamond`.
+
+---
+
+## Sprint 10 — Polish, Security Hardening, Deploy
 
 **Tujuan**: siap production di Vercel.
 
@@ -312,8 +341,9 @@ flowchart LR
     S2 --> S7[Sprint 7: Website Publik]
     S6 --> S7
     S5 --> S8[Sprint 8: Export]
-    S7 --> S9[Sprint 9: Polish & Deploy]
+    S7 --> S9[Sprint 9: UI/UX Upgrade]
     S8 --> S9
+    S9 --> S10[Sprint 10: Polish & Deploy]
 ```
 
 Sprint 6 & 7 bisa paralel dengan Sprint 3-5 kalau ada lebih dari satu jalur eksekusi (domain berbeda, tidak saling bergantung secara data), tapi tetap **satu domain per sesi agent** sesuai `AGENTS.md` §4.

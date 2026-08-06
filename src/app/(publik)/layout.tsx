@@ -1,47 +1,70 @@
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
-
-const NAV = [
-  { label: "Beranda", href: "/" },
-  { label: "ORMAWA", href: "/ormawa" },
-  { label: "Berita", href: "/berita" },
-  { label: "Kalender", href: "/kalender" },
-  { label: "Galeri", href: "/galeri" },
-  { label: "Arsip", href: "/arsip" },
-  { label: "Kontak", href: "/kontak" },
-];
+import { GraduationCap, Mail, MapPin, MessagesSquare } from "lucide-react";
+import { ThemeProvider } from "@/components/theme-provider";
+import { SiteHeader } from "@/components/publik/site-header";
+import { PUBLIK_NAV } from "@/lib/publik-nav";
 
 export default function PublikLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen flex-col">
-      <header className="sticky top-0 z-10 border-b bg-white/90 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-          <Link href="/" className="text-lg font-bold tracking-tight text-[#1E3A5F]">
-            SIM ORMAWA <span className="font-normal text-muted-foreground">· Universitas Adzkia</span>
-          </Link>
-          <nav className="flex flex-wrap items-center gap-1">
-            {NAV.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-              >
-                {item.label}
-              </Link>
-            ))}
-            <Button asChild size="sm" variant="outline" className="ml-2">
-              <Link href="/login">Masuk</Link>
-            </Button>
-          </nav>
-        </div>
-      </header>
-      <main className="flex-1">{children}</main>
-      <footer className="border-t bg-[#0F172A] py-8 text-sm text-slate-300">
-        <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4">
-          <p className="font-semibold text-white">SIM ORMAWA — KM Universitas Adzkia</p>
-          <p>Sistem Integrasi Manajemen Organisasi Mahasiswa. Hubungi kami lewat halaman Kontak.</p>
-        </div>
-      </footer>
-    </div>
+    <ThemeProvider>
+      <div className="flex min-h-screen flex-col">
+        <SiteHeader />
+        <main className="flex flex-1 flex-col">{children}</main>
+        <footer className="border-t bg-brand-dark text-slate-300">
+          <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center gap-2.5">
+                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/10 text-white">
+                  <GraduationCap className="h-5 w-5" aria-hidden="true" />
+                </span>
+                <span className="font-heading text-lg font-bold text-white">SIM ORMAWA</span>
+              </div>
+              <p className="text-sm leading-relaxed text-slate-400">
+                Sistem Integrasi Manajemen Organisasi Mahasiswa KM Universitas Adzkia — satu pintu untuk
+                informasi kegiatan, berita, dan partisipasi mahasiswa.
+              </p>
+            </div>
+            <div className="flex flex-col gap-3">
+              <p className="text-sm font-semibold uppercase tracking-widest text-white">Navigasi</p>
+              <nav className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm" aria-label="Navigasi footer">
+                {PUBLIK_NAV.map((item) => (
+                  <Link key={item.href} href={item.href} className="text-slate-400 transition-colors hover:text-white">
+                    {item.label}
+                  </Link>
+                ))}
+              </nav>
+            </div>
+            <div className="flex flex-col gap-3">
+              <p className="text-sm font-semibold uppercase tracking-widest text-white">Layanan</p>
+              <div className="flex flex-col gap-2 text-sm">
+                <Link href="/aspirasi" className="flex items-center gap-2 text-slate-400 transition-colors hover:text-white">
+                  <MessagesSquare className="h-4 w-4" aria-hidden="true" /> Sampaikan Aspirasi
+                </Link>
+                <Link href="/login" className="flex items-center gap-2 text-slate-400 transition-colors hover:text-white">
+                  Masuk Dashboard
+                </Link>
+              </div>
+            </div>
+            <div className="flex flex-col gap-3">
+              <p className="text-sm font-semibold uppercase tracking-widest text-white">Kontak</p>
+              <div className="flex flex-col gap-2 text-sm text-slate-400">
+                <a href="mailto:km@universitasadzkia.ac.id" className="flex items-center gap-2 transition-colors hover:text-white">
+                  <Mail className="h-4 w-4" aria-hidden="true" /> km@universitasadzkia.ac.id
+                </a>
+                <span className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4" aria-hidden="true" /> Kampus Universitas Adzkia
+                </span>
+              </div>
+            </div>
+          </div>
+          <div className="border-t border-white/10">
+            <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-2 px-4 py-4 text-xs text-slate-400 sm:flex-row">
+              <p>© {new Date().getFullYear()} KM Universitas Adzkia. Seluruh hak cipta dilindungi.</p>
+              <p>Sistem Integrasi Manajemen Organisasi Mahasiswa</p>
+            </div>
+          </div>
+        </footer>
+      </div>
+    </ThemeProvider>
   );
 }
