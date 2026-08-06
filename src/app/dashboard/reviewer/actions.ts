@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { eq } from "drizzle-orm";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
-import { proposals, reviewLogs } from "@/lib/db/schema";
+import { lpj, proposals, reviewLogs } from "@/lib/db/schema";
 import { can } from "@/lib/auth/permissions";
 import { reviewProposalSchema } from "@/lib/validations/workflow";
 import { assertTransition } from "@/lib/workflow/transitions";
@@ -50,5 +50,42 @@ export async function reviewProposal(proposalId: string, action: "disetujui" | "
 
   revalidatePath("/dashboard/reviewer");
   revalidatePath(`/dashboard/reviewer/proposal/${proposalId}`);
+  return { success: true };
+}
+
+/** Keputusan reviewer untuk LPJ — mirror reviewProposal dengan reviewableType "lpj". */
+export async function reviewLpj(lpjId: string, action: "disetujui" | "ditolak" | "revisi", catatan: string) {
+  const session = await auth();
+  if (!can(session, "review", "lpj", undefined)) return { error: "Forbidden" };
+
+  const parsed = reviewProposalSchema.safeParse({ proposalId: lpjId, action, catatan });
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Data tidak valid" };
+
+  try {
+    await db.transaction(async (tx) => {
+      // Race guard: baca status di dalam transaksi
+      const [current] = await tx.select().from(lpj).where(eq(lpj.id, lpjId));
+      if (!current) throw new Error("LPJ tidak ditemukan");
+
+      assertTransition(current.status, parsed.data.action);
+
+      await tx.update(lpj).set({ status: parsed.data.action, updatedAt: new Date() }).where(eq(lpj.id, lpjId));
+
+      await tx.insert(reviewLogs).values({
+        reviewableType: "lpj",
+        reviewableId: lpjId,
+        reviewerId: session!.user.id,
+        action: parsed.data.action,
+        catatan: parsed.data.catatan,
+        statusSebelum: current.status,
+        statusSesudah: parsed.data.action,
+      });
+    });
+  } catch (e) {
+    return { error: (e as Error).message };
+  }
+
+  revalidatePath("/dashboard/reviewer");
+  revalidatePath(`/dashboard/reviewer/lpj/${lpjId}`);
   return { success: true };
 }

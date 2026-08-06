@@ -30,7 +30,15 @@ type Proposal = {
   ormawaId: string;
 };
 
-const columns: ColumnDef<Proposal>[] = [
+type LpjItem = {
+  id: string;
+  judul: string;
+  status: string;
+  submittedAt: Date | null;
+  proposalJudul: string;
+};
+
+const proposalColumns: ColumnDef<Proposal>[] = [
   { accessorKey: "judul", header: "Judul" },
   {
     accessorKey: "status",
@@ -53,11 +61,39 @@ const columns: ColumnDef<Proposal>[] = [
   },
 ];
 
-export function ReviewerQueue({ proposals }: { proposals: Proposal[] }) {
+const lpjColumns: ColumnDef<LpjItem>[] = [
+  { accessorKey: "judul", header: "Judul LPJ" },
+  { accessorKey: "proposalJudul", header: "Proposal" },
+  {
+    accessorKey: "status",
+    header: "Status",
+    cell: ({ row }) => <Badge variant="default">{row.original.status}</Badge>,
+  },
+  {
+    id: "detail",
+    header: "Aksi",
+    cell: ({ row }) => (
+      <Button asChild size="sm" variant="outline">
+        <Link href={`/dashboard/reviewer/lpj/${row.original.id}`}>Review</Link>
+      </Button>
+    ),
+  },
+];
+
+export function ReviewerQueue({ proposals, lpjQueue }: { proposals: Proposal[]; lpjQueue: LpjItem[] }) {
   const [sorting, setSorting] = useState<SortingState>([{ id: "submittedAt", desc: true }]);
   const table = useReactTable({
     data: proposals,
-    columns,
+    columns: proposalColumns,
+    state: { sorting },
+    onSortingChange: setSorting,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+  });
+
+  const lpjTable = useReactTable({
+    data: lpjQueue,
+    columns: lpjColumns,
     state: { sorting },
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
@@ -65,9 +101,26 @@ export function ReviewerQueue({ proposals }: { proposals: Proposal[] }) {
   });
 
   return (
+    <div className="flex flex-col gap-4">
+      <QueueCard title="Antrian Review Proposal" table={table} empty="Tidak ada proposal menunggu review." />
+      <QueueCard title="Antrian Review LPJ" table={lpjTable} empty="Tidak ada LPJ menunggu review." />
+    </div>
+  );
+}
+
+function QueueCard<T>({
+  title,
+  table,
+  empty,
+}: {
+  title: string;
+  table: ReturnType<typeof useReactTable<T>>;
+  empty: string;
+}) {
+  return (
     <Card>
       <CardHeader>
-        <CardTitle>Antrian Review Proposal</CardTitle>
+        <CardTitle>{title}</CardTitle>
       </CardHeader>
       <CardContent>
         <Table>
@@ -102,8 +155,8 @@ export function ReviewerQueue({ proposals }: { proposals: Proposal[] }) {
             ))}
             {table.getRowModel().rows.length === 0 && (
               <TableRow>
-                <TableCell colSpan={columns.length} className="text-center text-muted-foreground">
-                  Tidak ada proposal menunggu review.
+                <TableCell colSpan={4} className="text-center text-muted-foreground">
+                  {empty}
                 </TableCell>
               </TableRow>
             )}

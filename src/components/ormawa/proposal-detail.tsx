@@ -38,11 +38,13 @@ export function ProposalDetail({
   logs,
   fileProposalUrl,
   fileRabUrl,
+  lpj,
 }: {
   proposal: Proposal;
   logs: Log[];
   fileProposalUrl: string | null;
   fileRabUrl: string | null;
+  lpj: { id: string; judul: string; status: string } | null;
 }) {
   const [pending, startTransition] = useTransition();
   const canResubmit = proposal.status === "revisi" || proposal.status === "draft";
@@ -100,6 +102,26 @@ export function ProposalDetail({
                 Submit Ulang
               </Button>
             </form>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>LPJ Terkait</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {lpj ? (
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-medium">{lpj.judul}</p>
+              <Badge variant={STATUS_BADGE[lpj.status] ?? "outline"}>{lpj.status}</Badge>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              {proposal.status === "disetujui"
+                ? "Proposal disetujui — LPJ bisa diajukan dari halaman LPJ."
+                : "LPJ hanya bisa diajukan setelah proposal disetujui."}
+            </p>
           )}
         </CardContent>
       </Card>

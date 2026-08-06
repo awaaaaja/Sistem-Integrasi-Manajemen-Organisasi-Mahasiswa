@@ -5,6 +5,11 @@ import { Badge } from "@/components/ui/badge";
 const NAV: Record<string, { label: string; href: string }[]> = {
   super_admin: [
     { label: "ORMAWA", href: "/dashboard/super-admin/ormawa" },
+    { label: "Berita", href: "/dashboard/super-admin/konten/berita" },
+    { label: "Kalender", href: "/dashboard/super-admin/konten/kalender" },
+    { label: "Galeri", href: "/dashboard/super-admin/konten/galeri" },
+    { label: "Arsip", href: "/dashboard/super-admin/konten/arsip" },
+    { label: "Aspirasi", href: "/dashboard/super-admin/konten/aspirasi" },
     { label: "Dashboard", href: "/dashboard/super-admin" },
   ],
   kemahasiswaan: [
@@ -27,6 +32,7 @@ const NAV: Record<string, { label: string; href: string }[]> = {
     { label: "Program Unggulan", href: "/dashboard/ormawa/program-unggulan" },
     { label: "Program Kerja", href: "/dashboard/ormawa/program-kerja" },
     { label: "Proposal", href: "/dashboard/ormawa/proposal" },
+    { label: "LPJ", href: "/dashboard/ormawa/lpj" },
   ],
   admin_ormawa: [
     { label: "Dashboard", href: "/dashboard/ormawa" },
@@ -36,6 +42,7 @@ const NAV: Record<string, { label: string; href: string }[]> = {
     { label: "Program Unggulan", href: "/dashboard/ormawa/program-unggulan" },
     { label: "Program Kerja", href: "/dashboard/ormawa/program-kerja" },
     { label: "Proposal", href: "/dashboard/ormawa/proposal" },
+    { label: "LPJ", href: "/dashboard/ormawa/lpj" },
   ],
 };
 

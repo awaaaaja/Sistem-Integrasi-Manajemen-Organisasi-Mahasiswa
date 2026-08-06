@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { getProposalById, getProposalLogs } from "@/lib/db/queries/proposal";
+import { getLpjByProposalId } from "@/lib/db/queries/lpj";
 import { can } from "@/lib/auth/permissions";
 import { getSignedUrl } from "@/lib/storage";
 import { ProposalDetail } from "@/components/ormawa/proposal-detail";
@@ -13,7 +14,7 @@ export default async function ProposalDetailPage({ params }: { params: Promise<{
   const proposal = await getProposalById(session, id);
   if (!proposal) return <p>Proposal tidak ditemukan.</p>;
 
-  const logs = (await getProposalLogs(session, id)) ?? [];
+  const [logs, lpj] = await Promise.all([getProposalLogs(session, id), getLpjByProposalId(session, id)]);
 
   // Signed URL hanya setelah lolos can() (PRD §7 poin 2)
   const [fileProposalUrl, fileRabUrl] = await Promise.all([
@@ -25,5 +26,13 @@ export default async function ProposalDetailPage({ params }: { params: Promise<{
       : null,
   ]);
 
-  return <ProposalDetail proposal={proposal} logs={logs} fileProposalUrl={fileProposalUrl} fileRabUrl={fileRabUrl} />;
+  return (
+    <ProposalDetail
+      proposal={proposal}
+      logs={logs ?? []}
+      fileProposalUrl={fileProposalUrl}
+      fileRabUrl={fileRabUrl}
+      lpj={lpj ? { id: lpj.id, judul: lpj.judul, status: lpj.status } : null}
+    />
+  );
 }

@@ -13,6 +13,11 @@ export const proposalSchema = z.object({
   judul: z.string().min(2, "Judul minimal 2 karakter").max(200),
 });
 
+export const lpjSchema = z.object({
+  proposalId: z.string().uuid(),
+  judul: z.string().min(2, "Judul minimal 2 karakter").max(200),
+});
+
 /** File proposal/RAB: pdf/jpg/png, maks 5MB (PRD §7 poin 5). */
 export const PROPOSAL_MIME_TYPES = ["application/pdf", "image/jpeg", "image/png"] as const;
 export const PROPOSAL_MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB

@@ -25,3 +25,10 @@ export function assertSubmitTransition(from: ProposalStatus) {
     throw new Error(`Proposal berstatus "${from}" tidak bisa disubmit ulang`);
   }
 }
+
+/** Gate LPJ (PRD §4.2 note): LPJ hanya bisa diajukan jika proposal terkait DISETUJUI. */
+export function assertCanSubmitLpj(proposalStatus: ProposalStatus) {
+  if (proposalStatus !== "disetujui") {
+    throw new Error(`LPJ hanya bisa diajukan untuk proposal berstatus "disetujui" (sekarang: "${proposalStatus}")`);
+  }
+}

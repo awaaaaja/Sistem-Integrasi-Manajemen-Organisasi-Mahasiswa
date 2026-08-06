@@ -174,14 +174,21 @@ Dokumen ini memecah `PRD.md` jadi unit kerja yang bisa dieksekusi AI agent satu 
 **Referensi**: `PRD.md` §4.2 (note: LPJ pakai state machine sama), `SCHEMA.md` §3
 
 **Task:**
-- [ ] Form LPJ hanya muncul/bisa diakses jika `proposal.status === "disetujui"` — validasi di server action, bukan cuma sembunyikan tombol
-- [ ] Upload `fileLpjPath` + `fileBuktiPengeluaranPath`
-- [ ] Reuse pola submit + transaksi dari Sprint 3 (`reviewableType: "lpj"`)
-- [ ] Reuse pola review dashboard dari Sprint 4, extend untuk `reviewableType: "lpj"`
-- [ ] Update `getProposalById` — sertakan status LPJ terkait (jika ada) di response, untuk UI "1 proposal → 1 LPJ"
-- [ ] Test manual: tidak bisa ajukan LPJ untuk proposal berstatus `draft`/`diajukan`/`ditolak`
+- [x] Form LPJ hanya muncul/bisa diakses jika `proposal.status === "disetujui"` — validasi di server action, bukan cuma sembunyikan tombol
+- [x] Upload `fileLpjPath` + `fileBuktiPengeluaranPath`
+- [x] Reuse pola submit + transaksi dari Sprint 3 (`reviewableType: "lpj"`)
+- [x] Reuse pola review dashboard dari Sprint 4, extend untuk `reviewableType: "lpj"`
+- [x] Update `getProposalById` — sertakan status LPJ terkait (jika ada) di response, untuk UI "1 proposal → 1 LPJ"
+- [x] Test manual: tidak bisa ajukan LPJ untuk proposal berstatus `draft`/`diajukan`/`ditolak`
 
 **Definition of Done**: sesuai `AGENTS.md` §6.
+
+**Catatan (Sprint 5):**
+1. Gate LPJ: `assertCanSubmitLpj()` di `src/lib/workflow/transitions.ts` — HANYA proposal `disetujui` yang boleh punya LPJ. Dipanggil di awal `submitLpj()` sebelum transaksi; error jelas kalau status proposal draft/diajukan/revisi/ditolak.
+2. Reuse: `lpjSchema` + `proposalFileSchema` (validasi file sama), `assertTransition`/`assertSubmitTransition` (state machine sama), `reviewProposalSchema` untuk keputusan reviewer LPJ, pola transaksi + race guard identik `reviewLpj()`.
+3. Scope LPJ: tabel `lpj` tidak punya `ormawaId` — scope admin_ormawa lewat `innerJoin` ke `proposals` (`getLpjList`/`getLpjById`). Antrian reviewer `getLpjReviewQueue()` TIDAK di-scope.
+4. "1 proposal → 1 LPJ": cek LPJ existing per proposalId sebelum insert (`getLpjForProposal`), UI detail proposal menampilkan section LPJ terkait.
+5. Test: 9 kasus PASS (gate tolak draft/diajukan/revisi/ditolak; state machine LPJ = proposal).
 
 ---
 
@@ -192,14 +199,24 @@ Dokumen ini memecah `PRD.md` jadi unit kerja yang bisa dieksekusi AI agent satu 
 **Referensi**: `PRD.md` §6.4, `SCHEMA.md` §4
 
 **Task:**
-- [ ] CRUD `berita` (rich text sederhana — cukup textarea/markdown, tidak perlu WYSIWYG kompleks untuk MVP), slug auto-generate + uniqueness check
-- [ ] CRUD `kalender` (kegiatan seluruh ORMAWA, tidak scoped)
-- [ ] CRUD `galeri` (upload foto, `ormawaId` nullable — bisa galeri umum atau per-ORMAWA)
-- [ ] CRUD `arsip` (dokumen publik: SK, pedoman)
-- [ ] Inbox `aspirasi` — list + ubah status (`baru` → `ditindaklanjuti`), read-only untuk isi pesan (tidak bisa diedit, hanya status)
-- [ ] Form publik aspirasi (`/aspirasi`) — rate limiting (pilih Upstash Redis, lebih predictable untuk quota gratis daripada Vercel Edge Config untuk kasus ini) + Zod validasi + honeypot field anti-bot sederhana
+- [x] CRUD `berita` (rich text sederhana — cukup textarea/markdown, tidak perlu WYSIWYG kompleks untuk MVP), slug auto-generate + uniqueness check
+- [x] CRUD `kalender` (kegiatan seluruh ORMAWA, tidak scoped)
+- [x] CRUD `galeri` (upload foto, `ormawaId` nullable — bisa galeri umum atau per-ORMAWA)
+- [x] CRUD `arsip` (dokumen publik: SK, pedoman)
+- [x] Inbox `aspirasi` — list + ubah status (`baru` → `ditindaklanjuti`), read-only untuk isi pesan (tidak bisa diedit, hanya status)
+- [x] Form publik aspirasi (`/aspirasi`) — rate limiting (pilih Upstash Redis, lebih predictable untuk quota gratis daripada Vercel Edge Config untuk kasus ini) + Zod validasi + honeypot field anti-bot sederhana
 
 **Definition of Done**: sesuai `AGENTS.md` §6.
+
+**Catatan Sprint 6 (dari eksekusi):**
+- File baru: `src/lib/validations/konten.ts` (berita/kalender/galeri/arsip/aspirasi schema + `slugify` + `HONEYPOT_FIELD`), `src/lib/rate-limit.ts` (Upstash `Ratelimit.fixedWindow(3, "60 s")` per IP), `src/app/aspirasi/` (page + action publik), `src/components/super-admin/{berita,kalender,galeri,arsip,aspirasi}-manager.tsx`, `src/app/dashboard/super-admin/konten/{berita,kalender,galeri,arsip,aspirasi,page.tsx}`.
+- Aksi super-admin: `src/app/dashboard/super-admin/konten/actions.ts` — semua lewat `can(session, ...)` server-side; slug unique check (berita), upload file via `uploadFile` (thumbnail/foto/arsip), `revalidatePath` setelah mutasi.
+- Galeri/arsip: tanpa update (file-based — cukup hapus + buat ulang); hanya create/delete.
+- Rate limit pakai `Redis.fromEnv()` (`UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN`) — sudah diisi di `.env.local` + Vercel production; kata kunci: `fixedWindow` (bukan `slidingWindow` — yang kedua bocor saat request di-spacing, test nyata 4/4 lolos; fixed = hard cap 3/menit); honeypot field `website` disembunyikan via CSS, bot ditolak diam-diam (tetap return success).
+- Dependensi baru: `@upstash/ratelimit`, `@upstash/redis`.
+- Test: slugify (normalisasi unicode, trim, unik), zod aspirasi valid/invalid, honeypot bukan field data — PASS via `npx tsx`.
+- `tsc --noEmit`, `npm run lint` (0 error 0 warning), `next build` sukses.
+- Note: query konten tidak menerima `session` (data publik / hanya super_admin — tidak ada scope ormawaId, sesuai PRD).
 
 ---
 
