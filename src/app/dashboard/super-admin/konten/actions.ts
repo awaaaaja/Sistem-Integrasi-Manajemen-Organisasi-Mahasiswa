@@ -46,7 +46,7 @@ export async function createBerita(formData: FormData) {
 
   const thumbnail = fileOrUndefined(formData.get("thumbnail"));
   if (thumbnail && !fileSchema.safeParse(thumbnail).success) return { error: "Thumbnail harus jpg/png/webp & ≤5MB" };
-  const thumbnailPath = thumbnail ? await uploadFile("berita", thumbnail) : null;
+  const thumbnailPath = thumbnail ? await uploadFile("berita", thumbnail, { public: true }) : null;
 
   await db.insert(berita).values({
     judul: parsed.data.judul,
@@ -153,7 +153,7 @@ export async function createGaleri(formData: FormData) {
   if (!foto) return { error: "Foto wajib diunggah" };
   if (!fileSchema.safeParse(foto).success) return { error: "Foto harus jpg/png/webp & ≤5MB" };
 
-  const fotoPath = await uploadFile("galeri", foto);
+  const fotoPath = await uploadFile("galeri", foto, { public: true });
   await db.insert(galeri).values({ ...parsed.data, fotoPath });
   revalidatePath(KONTEN_PATH);
   return { success: true };
@@ -184,7 +184,7 @@ export async function createArsip(formData: FormData) {
   if (!file) return { error: "File wajib diunggah" };
   if (!arsipFileSchema.safeParse(file).success) return { error: "File harus pdf/jpg/png & ≤5MB" };
 
-  const filePath = await uploadFile("arsip", file);
+  const filePath = await uploadFile("arsip", file, { public: true });
   await db.insert(arsip).values({ ...parsed.data, filePath });
   revalidatePath(KONTEN_PATH);
   return { success: true };

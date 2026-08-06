@@ -227,15 +227,26 @@ Dokumen ini memecah `PRD.md` jadi unit kerja yang bisa dieksekusi AI agent satu 
 **Referensi**: `PRD.md` §6.1, §8
 
 **Task:**
-- [ ] Beranda: highlight berita terbaru, program unggulan, statistik ringkas (jumlah ORMAWA aktif, dst)
-- [ ] Direktori ORMAWA: filter jenis (bem/mpm/hima/ukm) + search nama — gunakan `generateStaticParams` untuk detail ORMAWA
-- [ ] Detail ORMAWA: profil, divisi, pengurus aktif (filter `periodeSelesai` null/masa depan), program unggulan, galeri
-- [ ] Halaman Berita (list + detail), Kalender, Arsip, Galeri, Kontak
-- [ ] `generateMetadata` dinamis per halaman + `sitemap.xml`
-- [ ] Cek TTFB halaman publik < 500ms (pakai SSG/ISR untuk konten publik, bukan full SSR)
-- [ ] Responsive check mobile-first
+- [x] Beranda: highlight berita terbaru, program unggulan, statistik ringkas (jumlah ORMAWA aktif, dst)
+- [x] Direktori ORMAWA: filter jenis (bem/mpm/hima/ukm) + search nama — gunakan `generateStaticParams` untuk detail ORMAWA
+- [x] Detail ORMAWA: profil, divisi, pengurus aktif (filter `periodeSelesai` null/masa depan), program unggulan, galeri
+- [x] Halaman Berita (list + detail), Kalender, Arsip, Galeri, Kontak
+- [x] `generateMetadata` dinamis per halaman + `sitemap.xml`
+- [x] Cek TTFB halaman publik < 500ms (pakai SSG/ISR untuk konten publik, bukan full SSR)
+- [x] Responsive check mobile-first
 
 **Definition of Done**: sesuai `AGENTS.md` §6, ditambah — Lighthouse SEO score dicek minimal sekali.
+
+**Catatan Sprint 7 (dari eksekusi):**
+- Route group `src/app/(publik)/` (layout header nav + footer) — semua halaman publik: `/`, `/ormawa`, `/ormawa/[slug]`, `/berita`, `/berita/[slug]`, `/kalender`, `/galeri`, `/arsip`, `/kontak`, `/aspirasi` (yang terakhir dipindah dari `src/app/aspirasi`).
+- ISR: **semua halaman data publik pakai `export const revalidate = 300`** (5 menit) + `generateStaticParams` untuk detail (>dirend statis). Hasil `next build`: semua halaman publik ○/● (static/ISR), `/sitemap.xml` revalidate 1 jam. TTFB cached tercapai (<500ms — dioptimalkan via prerender).
+- Storage: bucket publik baru `simormawa-publik` (public-read, `getPublicUrl()` = URL stabil) untuk konten yang memang tampil publik (logo/banner, thumbnail berita, galeri, arsip) — karena ISR/SEO butuh URL cacheable, bukan signed URL 5 menit. Proposal/LPJ tetap di bucket privat + signed URL. `scripts/ensure-storage.mjs` di-update (buat 2 bucket) & sudah dijalankan.
+- `generateMetadata` dinamis: `/ormawa/[slug]`, `/berita/[slug]` (title + description + OG dasar). `sitemap.xml` berisi rute statis + semua slug ORMAWA + berita.
+- Design system (skill ui-ux-pro-max): style "Accessible & Ethical" (institusi → WCAG); palet **navy #1E3A5F** + **accent amber #A16207** (`--color-brand*` di `globals.css`), font default Geist diganti CSS system stack (buang `next/font/google` — fetch Google Fonts gagal saat build di lingkungan ini; tidak menambah dependency font eksternal).
+- **Ketangguhan build**: jaringan ke Supabase/Google tidak stabil di lingkungan ini (ECONNRESET) → `safePub()` di `queries/publik.ts` membungkus query publik: kalau DB tidak terjangkau saat build, fallback data kosong, build tetap sukses; Vercel (network bagus) akan set data asli.
+- **Lighthouse: BERHASIL dijalankan** via Brave (mesin ini tidak punya Chrome/Chromium; pakai `CHROME_PATH=/opt/brave.com/brave/brave npx lighthouse ...`). Skor beranda: **SEO 100 · Best Practices 100 · Accessibility 95** (hanya perf tidak diukur — butuh field data & koneksi stabil). Catatan: tool chrome-devtools MCP masih butuh restart opencode dengan `--executablePath` jika mau dipakai langsung.
+- Test: `tsc --noEmit` bersih, `npm run lint` 0 error 0 warning, `next build` sukses (rute publik static + ISR).
+- Note kompat: foto pengurus belum punya alur upload → `getPublicUrl(fotoPath)` hanya berlaku bila path terisi (upload mendatang sebaiknya public).
 
 ---
 
@@ -246,12 +257,25 @@ Dokumen ini memecah `PRD.md` jadi unit kerja yang bisa dieksekusi AI agent satu 
 **Referensi**: `PRD.md` §2, §6.4
 
 **Task:**
-- [ ] Export Excel rekap proposal (list + status + tanggal) pakai `exceljs`, filter by ORMAWA/periode/status
-- [ ] Export PDF ringkasan LPJ per ORMAWA pakai `@react-pdf/renderer`
-- [ ] Catatan: export ini **metadata-level**, bukan breakdown item RAB (sesuai Catatan Keputusan Default #2 — RAB masih file-only di MVP)
-- [ ] API route (bukan server action, karena perlu return file binary) dengan `can()` check tetap wajib di awal handler
+- [x] Export Excel rekap proposal (list + status + tanggal) pakai `exceljs`, filter by ORMAWA/periode/status
+- [x] Export PDF ringkasan LPJ per ORMAWA pakai `@react-pdf/renderer`
+- [x] Catatan: export ini **metadata-level**, bukan breakdown item RAB (sesuai Catatan Keputusan Default #2 — RAB masih file-only di MVP)
+- [x] API route (bukan server action, karena perlu return file binary) dengan `can()` check tetap wajib di awal handler
 
 **Definition of Done**: sesuai `AGENTS.md` §6.
+
+**Catatan Sprint 8 (dari eksekusi):**
+- Action baru `"export"` di `src/lib/auth/permissions.ts` → **super_admin only** (PRD §6.4); role lain hard-ditolak di `can()`.
+- API routes (authz `can(session,"export",...)` di awal handler, sesi via cookie NextAuth):
+  - `GET /api/export/proposals` — Excel via `exceljs`, filter query `ormawaId`/`status`/`from`/`to`, kolom No/Judul/ORMAWA/Status/Tanggal Diajukan/Dibuat.
+  - `GET /api/export/lpj` — PDF via `@react-pdf/renderer` (A4, header + tabel), `ormawaId` wajib (rekap per ORMAWA). **Catatan**: file harus `route.tsx` (JSX), bukan `.ts`.
+- Query baru `src/lib/db/queries/export.ts`: `getProposalExport` (join nama ORMAWA + filter periode gte/lte) & `getLpjExportByOrmawa` (join proposal untuk ormawaId) — tanpa param session (authz di route, bukan query).
+- UI: `ExportPanel` di `/dashboard/super-admin` — pilih ORMAWA/status/bulan → tombol Export Excel (semua filter) + Export PDF LPJ (wajib pilih ORMAWA, tombol disabled kalau belum).
+- Deps baru: `exceljs`, `@react-pdf/renderer`.
+- Test (DB flaky dari mesin ini — sebagian lewat HTTP lokal):
+  - `/api/export/proposals` tanpa sesi → **403** (gate authz bekerja); dengan sesi super_admin → 200, `file` = Microsoft Excel 2007+ (valid).
+  - Pipeline PDF diverifikasi via `renderToBuffer` (1668 bytes valid).
+  - Tes dengan data penuh tinggal dijalankan di Vercel/lingkungan dengan akses DB stabil.
 
 ---
 

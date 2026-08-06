@@ -13,7 +13,7 @@ export type Resource =
   | "arsip"
   | "aspirasi";
 
-export type Action = "create" | "read" | "update" | "delete" | "review";
+export type Action = "create" | "read" | "update" | "delete" | "review" | "export";
 
 type SessionLike = {
   user: {
@@ -47,6 +47,9 @@ export function can(
   const role = session.user.role ?? "";
 
   if (role === "super_admin") return true;
+
+  // Export laporan = ranah super_admin (PRD §6.4)
+  if (action === "export") return false;
 
   // Reviewer: read + review proposal/lpj, read review_logs. Tidak sentuh struktur ORMAWA.
   if (REVIEWER_ROLES.has(role)) {

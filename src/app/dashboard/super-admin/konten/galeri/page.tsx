@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { getGaleriList } from "@/lib/db/queries/konten";
-import { getSignedUrl } from "@/lib/storage";
+import { getPublicUrl } from "@/lib/storage";
 import { GaleriManager } from "@/components/super-admin/galeri-manager";
 
 export default async function SuperAdminGaleriPage() {
@@ -10,7 +10,7 @@ export default async function SuperAdminGaleriPage() {
   if (session.user.role !== "super_admin") redirect("/dashboard/super-admin");
 
   const items = await getGaleriList();
-  const withUrl = await Promise.all(items.map(async (g) => ({ ...g, fotoUrl: await getSignedUrl(g.fotoPath) })));
+  const withUrl = items.map((g) => ({ ...g, fotoUrl: getPublicUrl(g.fotoPath) }));
 
   return (
     <div className="flex flex-col gap-4">

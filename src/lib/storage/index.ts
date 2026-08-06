@@ -7,19 +7,27 @@ const serviceClient = createClient(
 );
 
 export const storageBucket = process.env.SUPABASE_STORAGE_BUCKET ?? "simormawa-files";
+/** Bucket publik untuk konten yang memang tampil publik (logo/banner, berita, galeri, arsip). */
+export const publicBucket = "simormawa-publik";
 
 /** Upload via service role. Return storage path. Path unik per upload: {folder}/{uuid}-{nama}. */
 export async function uploadFile(
   folder: string,
   file: File,
+  opts?: { public?: boolean },
 ): Promise<string> {
   const ext = file.name.split(".").pop()?.toLowerCase() ?? "bin";
   const path = `${folder}/${crypto.randomUUID()}.${ext}`;
   const { error } = await serviceClient.storage
-    .from(storageBucket)
+    .from(opts?.public ? publicBucket : storageBucket)
     .upload(path, file, { contentType: file.type, upsert: false });
   if (error) throw new Error(`Upload gagal: ${error.message}`);
   return path;
+}
+
+/** URL stabil untuk file publik (tanpa signed URL — konten ini memang publik, perlu cacheable untuk ISR/SEO). */
+export function getPublicUrl(path: string): string {
+  return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${publicBucket}/${path}`;
 }
 
 /** Signed URL untuk akses file privat (≤5 menit, dipakai UI). */

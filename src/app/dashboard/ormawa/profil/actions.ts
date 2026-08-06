@@ -35,8 +35,8 @@ export async function updateProfilOrmawa(ormawaId: string, formData: FormData) {
 
   let logoPath: string | undefined;
   let bannerPath: string | undefined;
-  if (logo) logoPath = await uploadFile(`ormawa/${ormawaId}`, logo);
-  if (banner) bannerPath = await uploadFile(`ormawa/${ormawaId}`, banner);
+  if (logo) logoPath = await uploadFile(`ormawa/${ormawaId}`, logo, { public: true });
+  if (banner) bannerPath = await uploadFile(`ormawa/${ormawaId}`, banner, { public: true });
 
   await db
     .update(ormawa)
